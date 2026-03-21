@@ -1,0 +1,37 @@
+{
+  "name": "worker",
+  "version": "1.0.0",
+  "description": "Cloud Run Worker for Evolution API processing",
+  "main": "dist/server.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/server.js",
+    "dev": "ts-node src/server.ts"
+  },
+  "dependencies": {
+    "@b4you/types": "*",
+    "@b4you/firebase": "*",
+    "@google-cloud/storage": "^7.18.0",
+    "@google-cloud/tasks": "^5.0.0",
+    "@types/pg": "^8.16.0",
+    "axios": "^1.6.2",
+    "body-parser": "^1.20.2",
+    "express": "^4.18.2",
+    "ffmpeg-static": "^5.3.0",
+    "firebase-admin": "^11.11.1",
+    "fluent-ffmpeg": "^2.1.3",
+    "p-limit": "^3.1.0",
+    "pg": "^8.17.2",
+    "stream-chain": "^3.4.0",
+    "stream-json": "^1.9.1"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "@types/fluent-ffmpeg": "^2.1.28",
+    "@types/node": "^20.10.5",
+    "@types/stream-chain": "^2.1.0",
+    "@types/stream-json": "^1.7.8",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.3.3"
+  }
+}

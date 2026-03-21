@@ -1,0 +1,34 @@
+{
+  "manifest_version": 3,
+  "name": "B4you Conect",
+  "version": "3.1",
+  "permissions": [
+    "scripting",
+    "storage",
+    "activeTab"
+  ],
+  "host_permissions": [
+    "https://dashboard.kiwify.com/*",
+    "https://admin-api.kiwify.com.br/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://dashboard.kiwify.com/*"],
+      "js": ["content.js"],
+      "run_at": "document_start"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["injector.js"],
+      "matches": ["https://dashboard.kiwify.com/*"]
+    }
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "B4you Conect"
+  }
+}

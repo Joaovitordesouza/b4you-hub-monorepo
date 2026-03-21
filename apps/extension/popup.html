@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <style>
+    :root {
+      --b4-dark-bg: #121212;
+      --b4-card-bg: #1e1e1e;
+      --b4-cyan: #40E0D0;
+      --b4-button: #327d6f;
+      --b4-text: #FFFFFF;
+      --b4-text-dim: #A0A0A0;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    body {
+      width: 320px;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      padding: 0;
+      margin: 0;
+      background-color: var(--b4-dark-bg);
+      color: var(--b4-text);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .window {
+      padding: 32px 24px;
+      animation: fadeIn 0.4s ease-out;
+    }
+
+    .container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 24px;
+    }
+
+    .header {
+      text-align: center;
+      width: 100%;
+    }
+
+    .logo-container {
+      width: 140px;
+      margin: 0 auto 20px;
+    }
+
+    .logo-img {
+      width: 100%;
+      height: auto;
+      object-fit: contain;
+    }
+
+    h1 {
+      font-size: 24px;
+      font-weight: 600;
+      margin: 0;
+      letter-spacing: -0.5px;
+    }
+
+    .subtitle {
+      font-size: 14px;
+      color: var(--b4-text-dim);
+      margin-top: 8px;
+    }
+
+    .card {
+      background: var(--b4-card-bg);
+      border-radius: 12px;
+      padding: 20px;
+      width: 100%;
+      box-sizing: border-box;
+      border: 1px solid rgba(255,255,255,0.05);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .status-label {
+      font-size: 14px;
+      color: var(--b4-text-dim);
+    }
+
+    .status-value {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 500;
+      font-size: 14px;
+    }
+
+    .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #FF3B30;
+      box-shadow: 0 0 10px rgba(255, 59, 48, 0.3);
+    }
+
+    .dot.active {
+      background: var(--b4-cyan);
+      box-shadow: 0 0 12px rgba(64, 224, 208, 0.5);
+    }
+
+    .actions {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      width: 100%;
+      margin-top: 8px;
+    }
+
+    .btn {
+      border: none;
+      padding: 16px;
+      border-radius: 10px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .btn-primary {
+      background: var(--b4-button);
+      color: white;
+    }
+
+    .btn-primary:hover:not(:disabled) {
+      background: #3da28e;
+      transform: translateY(-1px);
+    }
+
+    .btn-primary:active:not(:disabled) {
+      transform: translateY(0);
+    }
+
+    .btn-primary:disabled {
+      background: #2a2a2a;
+      color: #555;
+      cursor: not-allowed;
+    }
+
+    .btn-outline {
+      background: transparent;
+      color: var(--b4-cyan);
+      border: 1px solid rgba(64, 224, 208, 0.3);
+      font-size: 13px;
+      padding: 12px;
+    }
+
+    .btn-outline:hover {
+      background: rgba(64, 224, 208, 0.05);
+      border-color: var(--b4-cyan);
+    }
+
+    .footer {
+      font-size: 11px;
+      color: var(--b4-text-dim);
+      text-align: center;
+      margin-top: 10px;
+    }
+
+    .arrow-icon {
+      font-size: 18px;
+    }
+  </style>
+</head>
+<body>
+  <div class="window">
+    <div class="container">
+      <div class="header">
+        <div class="logo-container">
+          <img src="https://storage.googleapis.com/bluue/download.png" alt="B4you" class="logo-img">
+        </div>
+        <h1>Secure Connection</h1>
+        <p class="subtitle">Integração inteligente</p>
+      </div>
+
+      <div class="card">
+        <span class="status-label">Status</span>
+        <div class="status-value">
+          <div id="status-dot" class="dot"></div>
+          <span id="status-text">Desconectado</span>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button id="btnAction" class="btn btn-primary" disabled>
+          <span>Copiar Token</span>
+          <span class="arrow-icon">→</span>
+        </button>
+        
+        <button id="btnDashboard" class="btn btn-outline">
+          Ir para Kiwify
+        </button>
+      </div>
+
+      <div class="footer">
+        v3.2 • Powered by B4you
+      </div>
+    </div>
+  </div>
+  <script src="popup.js"></script>
+</body>
+</html>

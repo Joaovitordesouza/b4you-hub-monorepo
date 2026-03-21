@@ -1,0 +1,37 @@
+# Dependencies
+node_modules/
+dist/
+lib/
+.next/
+build/
+.cache/
+
+# Environment Variables
+.env
+.env.*
+!.env.production
+!.env.example
+
+# OS and Editors
+.DS_Store
+.vscode/
+.idea/
+.cursor/
+*.log
+
+# Data and Temporary Files
+downloads/
+kiwify-backend/downloads/
+tmp/
+*.rar
+*.zip
+*.gz
+
+# Firebase
+firebase-debug.log
+firebase-debug.*.log
+.firebase/
+
+# Project Specific
+apps/frontend/nginx.conf
+legacy/

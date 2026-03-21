@@ -1,0 +1,24 @@
+{
+  "name": "b4you-hub-monorepo",
+  "private": true,
+  "packageManager": "npm@10.8.2",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "backend:dev": "npm run dev --workspace=apps/backend-worker",
+    "functions:dev": "npm run dev --workspace=apps/functions",
+    "frontend:dev": "npm run dev --workspace=apps/frontend",
+    "cert:dev": "npm run dev --workspace=apps/certificate-generator",
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "dev": "turbo run dev",
+    "deploy:full": "bash infra/scripts/deploy_full_unificado.sh"
+  },
+  "devDependencies": {
+    "turbo": "^2.0.0",
+    "prettier": "^3.0.0",
+    "typescript": "^5.0.0"
+  }
+}

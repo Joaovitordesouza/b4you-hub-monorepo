@@ -1,0 +1,64 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    
+    // Função auxiliar para verificar autenticação
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    // Estrutura de usuários: Apenas o dono pode ler seus dados sensíveis
+    match /users/{userId}/{allPaths=**} {
+      allow read: if isSignedIn() && request.auth.uid == userId;
+      allow write: if false; // Apenas backend escreve aqui
+    }
+
+    // [CORE] Mídias das Instâncias (Sincronizadas pelo Worker)
+    // Permite leitura PÚBLICA para que a Evolution API e o Front-end possam acessar
+    // O instanceId é um UUID difícil de adivinhar, então é seguro
+    match /instances/{instanceId}/media/{allPaths=**} {
+      allow read: if true; // Público para permitir download e exibição imediata
+      allow write: if false; // Apenas o Worker/Admin SDK escreve aqui
+    }
+
+    // [NOVO] Upload de mídias do Front-end para envio (Outbox)
+    // Leitura pública para a Evolution API poder fazer download da URL
+    // Criação permitida apenas para usuários autenticados
+    match /instances/{instanceId}/outbox-media/{allPaths=**} {
+      allow read: if true; // Evolution API precisa baixar via URL pública
+      allow create: if isSignedIn();
+      allow update, delete: if false;
+    }
+
+    // Fotos de Perfil (Sincronizadas pelo Worker)
+    match /pfp/{instanceId}/{allPaths=**} {
+      allow read: if true; // Público para permitir download sem autenticação
+      allow write: if false;
+    }
+
+    // [LEGADO] Pastas antigas de mídias - mantidas em read-only para compatibilidade
+    // Novos uploads devem usar /instances/{instanceId}/outbox-media/
+    match /audio/{allPaths=**} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn(); // Mantido temporariamente para retrocompatibilidade
+      allow update, delete: if false;
+    }
+
+    match /media/{allPaths=**} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn(); // Mantido temporariamente para retrocompatibilidade
+      allow update, delete: if false;
+    }
+
+    match /images/{allPaths=**} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn(); // Mantido temporariamente para retrocompatibilidade
+      allow update, delete: if false;
+    }
+    
+    // Fallback legado
+    match /workspaces/{workspaceId}/{allPaths=**} {
+       allow read: if isSignedIn();
+    }
+  }
+}

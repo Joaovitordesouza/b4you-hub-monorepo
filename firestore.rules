@@ -1,0 +1,185 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // --- FUNÇÕES AUXILIARES ---
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isSignedIn() &&
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isResourceOwner() {
+      return isSignedIn() && resource.data.ownerId == request.auth.uid;
+    }
+
+    function isMember() {
+      return isSignedIn() && resource.data.members != null && resource.data.members.hasAny([request.auth.uid]);
+    }
+
+    function isCreatingAsOwner() {
+      return isSignedIn() && request.resource.data.ownerId == request.auth.uid;
+    }
+
+    function isDocOwner() {
+      return isSignedIn() && resource.data.userId == request.auth.uid;
+    }
+
+    function isCreatingDocOwner() {
+      return isSignedIn() && request.resource.data.userId == request.auth.uid;
+    }
+
+    // --- REGRAS POR COLEÇÃO ---
+
+    // 1. Usuários
+    match /users/{userId} {
+      allow read: if isSignedIn();
+      allow create: if isOwner(userId) || isAdmin();
+      allow update, delete: if isOwner(userId) || isAdmin();
+
+      match /notifications/{notificationId} {
+        allow read: if isOwner(userId);
+        allow create: if isSignedIn();
+        allow update, delete: if isOwner(userId);
+      }
+    }
+
+    // 2. Work OS: Workspaces de Boards (workspaces_boards)
+    match /workspaces_boards/{workspaceId} {
+      allow read: if isSignedIn() && (
+        resource.data.isPublic == true ||
+        isResourceOwner() ||
+        isMember() ||
+        isAdmin()
+      );
+      allow create: if isSignedIn() && isCreatingAsOwner();
+      allow update: if isSignedIn() && (
+        isResourceOwner() ||
+        isMember() ||
+        isAdmin()
+      );
+      allow delete: if isSignedIn() && (isResourceOwner() || isAdmin());
+    }
+
+    // 3. Work OS: Quadros (boards)
+    match /boards/{boardId} {
+      allow read: if isSignedIn() && (
+        resource.data.type == 'main' ||
+        isResourceOwner() ||
+        isMember() ||
+        isAdmin()
+      );
+      allow create: if isSignedIn() && isCreatingAsOwner();
+      allow update: if isSignedIn() && (
+        isResourceOwner() ||
+        isMember() ||
+        isAdmin() ||
+        resource.data.type == 'main'
+      );
+      allow delete: if isSignedIn() && (isResourceOwner() || isAdmin());
+    }
+
+    // 4. CRM: Campanhas
+    match /campaigns/{campaignId} {
+      allow read: if isResourceOwner() || isAdmin();
+      allow create: if isSignedIn() && isCreatingAsOwner();
+      allow update, delete: if isResourceOwner() || isAdmin();
+    }
+
+    // 5. CRM: Leads
+    match /leads/{leadId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && isCreatingAsOwner();
+      allow update, delete: if isResourceOwner() || isAdmin();
+
+      match /timeline/{eventId} {
+        allow read, write: if isSignedIn();
+      }
+    }
+
+    // 6. Kiwify / Geral: Workspaces
+    match /workspaces/{workspaceId} {
+      allow read: if isResourceOwner() || isAdmin();
+      allow create: if isSignedIn() && isCreatingAsOwner();
+      allow update, delete: if isResourceOwner() || isAdmin();
+    }
+
+    // 7. Tech: Migrações
+    match /migrations/{migrationId} {
+      allow read, update, delete: if isDocOwner() || isAdmin();
+      allow create: if isCreatingDocOwner();
+
+      match /tasks/{taskId} {
+        allow read: if isSignedIn() && (
+          resource.data.userId == request.auth.uid ||
+          get(/databases/$(database)/documents/migrations/$(migrationId)).data.userId == request.auth.uid
+        );
+      }
+
+      match /lessons/{lessonId} {
+        allow read: if isSignedIn() && (
+          resource.data.userId == request.auth.uid ||
+          get(/databases/$(database)/documents/migrations/$(migrationId)).data.userId == request.auth.uid
+        );
+      }
+    }
+
+    // 8. Tasks (Tarefas Avulsas)
+    match /tasks/{taskId} {
+      allow read, create, update, delete: if isSignedIn();
+    }
+
+    // 9. Carteira de Produtores
+    match /producers/{producerId} {
+      allow read: if isSignedIn();
+      // Escrita bloqueada para client (apenas via Webhook/Cloud Function)
+      allow write: if false;
+
+      match /timeline/{eventId} {
+        allow read: if isSignedIn();
+        allow write: if false;
+      }
+      match /files/{fileId} {
+        allow read: if isSignedIn();
+        allow write: if false;
+      }
+    }
+
+    // 10. Evolution API: Instâncias
+    match /instances/{instanceId} {
+      // Permite leitura e escrita na instância se o usuário estiver logado
+      allow read, write: if isSignedIn();
+
+      // Chats: Gerenciamento de mensagens e metadados
+      match /chats/{chatId} {
+        // Permite leitura, criação e atualização (essencial para unreadCount e sync)
+        allow read, write: if isSignedIn();
+
+        match /messages/{messageId} {
+          // Permite leitura e escrita nas mensagens (incluindo status e reações)
+          allow read, write: if isSignedIn();
+        }
+      }
+
+      // Outbox: Fila de envio disparada pelo Frontend
+      match /outbox/{msgId} {
+        allow read, write: if isSignedIn();
+      }
+    }
+
+    // 11. Logs de Auditoria
+    match /audit_logs/{logId} {
+      allow create: if isSignedIn();
+      allow read: if isAdmin();
+    }
+  }
+}

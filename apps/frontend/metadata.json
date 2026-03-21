@@ -1,0 +1,8 @@
+{
+  "name": "Beta Versao atual B4youhub",
+  "description": "Plataforma de prospecção e treinamento de creators com Kanban, simulação de chat e gestão de campanhas.",
+  "requestFramePermissions": [
+    "microphone",
+    "camera"
+  ]
+}

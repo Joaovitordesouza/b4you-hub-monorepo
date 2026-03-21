@@ -1,0 +1,26 @@
+{
+  "rules": {
+    "continuity-ledger": true,
+    "separation-of-concerns": true,
+    "error-learning": true,
+    "error-prevention": true,
+    "implementation-tracking": true,
+    "task-management": true,
+    "product-documentation": true,
+    "no-speculation": true,
+    "architecture-documentation": true,
+    "small-atomic-commits": true,
+    "test-driven-validation": true,
+    "incremental-tasks": true,
+    "context-hygiene": true,
+    "security-sensitive-data": true,
+    "decision-records": true,
+    "checkpoint-strategy": true,
+    "subagent-patterns": true
+  },
+  "project": {
+    "name": "B4You Hub",
+    "type": "web",
+    "techStack": ["React", "Vite", "TypeScript", "Node.js", "Firebase", "Evolution API"]
+  }
+}

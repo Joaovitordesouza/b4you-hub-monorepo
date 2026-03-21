@@ -1,0 +1,55 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: worker-executor
+  namespace: default
+spec:
+  replicas: 4
+  selector:
+    matchLabels:
+      app: worker-executor
+  template:
+    metadata:
+      labels:
+        app: worker-executor
+    spec:
+      serviceAccountName: worker-sa
+      containers:
+      - name: worker
+        image: southamerica-east1-docker.pkg.dev/b4youhub-483504/kiwify-repo/worker:v8-executor-fix
+        command: ["node", "src/executor.js"]
+        env:
+        - name: DB_POOL_MAX
+          value: "2"
+        - name: GCP_PROJECT
+          value: "b4you-hub"
+        - name: GCP_REGION
+          value: "southamerica-east1"
+        - name: WORKER_URL
+          value: "https://evolution-worker-74e3ydctxq-uc.a.run.app"
+        # Adicione DATABASE_URL via Secret em Produção
+        # - name: DATABASE_URL
+        #   valueFrom:
+        #     secretKeyRef:
+        #       name: evolution-db-secret
+        #       key: url
+        resources:
+          requests:
+            cpu: "1000m"
+            memory: "2Gi"
+          limits:
+            cpu: "2000m"
+            memory: "4Gi"
+        volumeMounts:
+        - mountPath: /tmp
+          name: tmp-volume
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 10
+          periodSeconds: 30
+      volumes:
+      - name: tmp-volume
+        emptyDir:
+          sizeLimit: 4Gi

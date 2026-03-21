@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: worker-orchestrator
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: worker-orchestrator
+  template:
+    metadata:
+      labels:
+        app: worker-orchestrator
+    spec:
+      serviceAccountName: worker-sa
+      containers:
+      - name: worker
+        image: southamerica-east1-docker.pkg.dev/b4youhub-483504/kiwify-repo/worker:v5-fix-orchestrator
+        command: ["node", "src/orchestrator.js"]
+        resources:
+          requests:
+            cpu: "250m"
+            memory: "512Mi"
+          limits:
+            cpu: "500m"
+            memory: "1Gi"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 10
+          periodSeconds: 30
