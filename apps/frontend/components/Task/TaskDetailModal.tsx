@@ -248,12 +248,27 @@ export const TaskDetailModal: React.FC<Props> = ({ task, isOpen, onClose, teamMe
         }
     };
 
-    const mentionData = teamMembers && teamMembers.length > 0 
-        ? teamMembers.filter(u => u).map(u => ({
-            id: String(u.id || 'unknown'),
-            display: String(u.nome || 'Usuário sem nome')
-        }))
-        : [{ id: 'empty', display: 'Nenhum membro encontrado' }];
+    const searchMembers = (search: string, callback: (data: any[]) => void) => {
+        if (!teamMembers || teamMembers.length === 0) {
+            callback([{ id: 'empty', display: 'Nenhum membro encontrado' }]);
+            return;
+        }
+        
+        const normalizedSearch = search.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+        
+        const filtered = teamMembers
+            .filter(u => u && u.nome)
+            .filter(u => {
+                const normalizedName = String(u.nome).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+                return normalizedName.includes(normalizedSearch);
+            })
+            .map(u => ({
+                id: String(u.id || 'unknown'),
+                display: String(u.nome || 'Usuário')
+            }));
+            
+        callback(filtered);
+    };
 
     if (!isOpen) return null;
 
@@ -338,7 +353,7 @@ export const TaskDetailModal: React.FC<Props> = ({ task, isOpen, onClose, teamMe
                                             >
                                                 <Mention
                                                     trigger="@"
-                                                    data={mentionData}
+                                                    data={searchMembers}
                                                     displayTransform={(id, display) => `@${display}`}
                                                     markup="@__display__"
                                                     className="bg-brand-50 text-brand-700 font-bold px-1 rounded-md"
@@ -473,7 +488,7 @@ export const TaskDetailModal: React.FC<Props> = ({ task, isOpen, onClose, teamMe
                                                                 >
                                                                     <Mention
                                                                         trigger="@"
-                                                                        data={mentionData}
+                                                                        data={searchMembers}
                                                                         displayTransform={(id, display) => `@${display}`}
                                                                         markup="@__display__"
                                                                         className="bg-brand-50 text-brand-700 font-bold px-1 rounded-md"

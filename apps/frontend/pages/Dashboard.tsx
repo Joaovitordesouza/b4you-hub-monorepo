@@ -31,7 +31,9 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../AuthContext';
 import { useEvolution } from '../contexts/EvolutionContext';
-import { db } from '../firebase';
+import { db, functions } from '../firebase';
+import { startOfDay, endOfDay, format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 
 interface Props {
   leads: Lead[];
@@ -115,6 +117,37 @@ export const Dashboard: React.FC<Props> = ({ leads, campanhas, producers, tasks 
       }
     });
     return () => unsub();
+  }, [currentUser]);
+
+  const [agendaEvents, setAgendaEvents] = useState<any[]>([]);
+  const [loadingAgenda, setLoadingAgenda] = useState(false);
+
+  useEffect(() => {
+    if (!currentUser) return;
+    const fetchTodayEvents = async () => {
+      setLoadingAgenda(true);
+      try {
+        const now = new Date();
+        const listEvents = functions.httpsCallable('listEvents');
+        const { data } = await listEvents({ 
+          timeMin: startOfDay(now).toISOString(), 
+          timeMax: endOfDay(now).toISOString() 
+        });
+        
+        let fetched = data as any[];
+        // Filtra para remover eventos que já passaram e limita a 5
+        fetched = fetched.filter(e => {
+            const ed = e.end?.dateTime ? new Date(e.end.dateTime) : new Date(e.end?.date);
+            return ed > now;
+        });
+        setAgendaEvents(fetched.slice(0, 5));
+      } catch (e) {
+        console.error("Falha ao carregar agenda:", e);
+      } finally {
+        setLoadingAgenda(false);
+      }
+    };
+    fetchTodayEvents();
   }, [currentUser]);
 
   // --- Processamento de Dados (Foco CS Cockpit) ---
@@ -338,53 +371,53 @@ export const Dashboard: React.FC<Props> = ({ leads, campanhas, producers, tasks 
               </div>
           </div>
 
-          {/* Tarefas Críticas / Próximas Ações */}
+          {/* Tarefas Críticas / Minha Agenda Hoje */}
           <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-card flex flex-col">
-              <div className="mb-6">
-                  <h3 className="text-lg font-bold text-gray-900">Próximas Ações</h3>
-                  <p className="text-xs text-gray-500">Tarefas prioritárias para hoje.</p>
+              <div className="mb-6 flex justify-between items-center">
+                  <div>
+                      <h3 className="text-lg font-bold text-gray-900">Minha Agenda Hoje</h3>
+                      <p className="text-xs text-gray-500">Seus próximos compromissos.</p>
+                  </div>
+                  {loadingAgenda && <div className="w-4 h-4 rounded-full border-2 border-brand-500 border-t-transparent animate-spin"></div>}
               </div>
-              <div className="flex-1 space-y-4">
-                  {myPendingTasks.slice(0, 5).map((task) => (
-                      <div key={task.id} className="p-3 rounded-xl border border-gray-100 hover:border-brand-200 transition-all group cursor-pointer">
-                          <div className="flex items-start gap-3">
-                              <div className={`mt-0.5 p-1.5 rounded-lg ${
-                                  task.priority === 'CRITICAL' ? 'bg-red-50 text-red-600' :
-                                  task.priority === 'HIGH' ? 'bg-orange-50 text-orange-600' : 'bg-blue-50 text-blue-600'
-                              }`}>
-                                  {task.priority === 'CRITICAL' ? <AlertTriangle size={14}/> : <Clock size={14}/>}
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                  <p className="text-xs font-bold text-gray-900 truncate">{task.title}</p>
-                                  <div className="flex items-center gap-2 mt-1">
-                                      <span className="text-[10px] font-bold text-gray-400 flex items-center gap-1">
-                                          <Calendar size={10} /> {new Date(task.dueDate).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}
-                                      </span>
-                                      {task.creatorName && (
-                                          <span className="text-[10px] font-bold text-brand-600 bg-brand-50 px-1.5 py-0.5 rounded">
-                                              {task.creatorName.split(' ')[0]}
+              <div className="flex-1 space-y-3">
+                  {agendaEvents.map((event) => {
+                      const startTime = event.start?.dateTime ? new Date(event.start.dateTime) : null;
+                      const isNow = startTime && startTime <= new Date();
+                      
+                      return (
+                          <div key={event.id} className={`p-3 rounded-xl border transition-all group cursor-pointer ${isNow ? 'bg-brand-50 border-brand-200' : 'bg-white border-gray-100 hover:border-gray-300'}`}>
+                              <div className="flex items-start gap-3">
+                                  <div className={`mt-0.5 p-1.5 rounded-lg ${isNow ? 'bg-brand-600 text-white shadow-sm' : 'bg-gray-100 text-gray-500'}`}>
+                                      {isNow ? <Zap size={14}/> : <Calendar size={14}/>}
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                      <p className={`text-xs font-bold truncate ${isNow ? 'text-brand-900' : 'text-gray-900'}`}>{event.summary || 'Sem Título'}</p>
+                                      <div className="flex items-center gap-2 mt-1">
+                                          <span className={`text-[10px] font-bold flex items-center gap-1 ${isNow ? 'text-brand-700' : 'text-gray-500'}`}>
+                                              <Clock size={10} /> {startTime ? format(startTime, 'HH:mm') : 'Dia Todo'}
                                           </span>
-                                      )}
+                                      </div>
                                   </div>
                               </div>
                           </div>
-                      </div>
-                  ))}
-                  {myPendingTasks.length === 0 && (
+                      );
+                  })}
+                  {!loadingAgenda && agendaEvents.length === 0 && (
                       <div className="h-full flex flex-col items-center justify-center text-center py-10">
-                          <div className="w-12 h-12 bg-green-50 text-green-500 rounded-full flex items-center justify-center mb-3">
+                          <div className="w-12 h-12 bg-gray-50 text-gray-400 rounded-full flex items-center justify-center mb-3">
                               <CheckCircle2 size={24} />
                           </div>
-                          <p className="text-xs font-bold text-gray-500">Tudo em dia!</p>
-                          <p className="text-[10px] text-gray-400">Você não tem tarefas pendentes.</p>
+                          <p className="text-xs font-bold text-gray-500">Agenda livre!</p>
+                          <p className="text-[10px] text-gray-400">Você não tem mais compromissos hoje.</p>
                       </div>
                   )}
               </div>
               <button 
-                onClick={() => window.location.hash = '#/tasks'}
+                onClick={() => window.location.hash = '#/calendar'}
                 className="mt-6 w-full py-2.5 text-xs font-bold text-gray-500 hover:text-gray-900 hover:bg-gray-50 rounded-xl transition-all border border-dashed border-gray-200"
               >
-                  Ver Todas as Tarefas
+                  Abrir Agenda Completa
               </button>
           </div>
       </div>

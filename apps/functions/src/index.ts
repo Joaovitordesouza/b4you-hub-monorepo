@@ -13,6 +13,9 @@ import { manageInstances } from "./hooks/manageInstances";
 import { sendMessage, deleteMessage, editMessage } from "./hooks/chatActions";
 import { syncChatMessages } from "./hooks/syncActions";
 
+import { getGoogleAuthUrl, googleAuthCallback, listEvents, manageEvent } from "./hooks/calendarHooks";
+import { getAvailableSlots, bookMeeting } from "./hooks/schedulingHooks";
+
 // Inicializa usando o projeto padrão do ambiente (b4you-hub-prodv1)
 admin.initializeApp();
 
@@ -79,5 +82,11 @@ export {
     sendMessage, 
     deleteMessage, 
     editMessage,
-    syncChatMessages
+    syncChatMessages,
+    getGoogleAuthUrl,
+    googleAuthCallback,
+    getAvailableSlots,
+    bookMeeting,
+    listEvents,
+    manageEvent
 };

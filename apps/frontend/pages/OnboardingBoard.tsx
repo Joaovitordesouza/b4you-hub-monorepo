@@ -10,6 +10,7 @@ import {
 import { Avatar } from '../components/Avatar';
 import { db, auth, fieldValue } from '../firebase';
 import { useToast } from '../contexts/ToastContext';
+import { ScheduleOnboardingModal } from '../components/ScheduleOnboardingModal';
 
 // --- CONFIGURAÇÃO VISUAL & LÓGICA ---
 
@@ -309,7 +310,18 @@ export const OnboardingBoard: React.FC<Props> = ({ producers = [], onUpdateStatu
     const { addToast } = useToast();
     const [draggedItem, setDraggedItem] = useState<string | null>(null);
     const [gateModalData, setGateModalData] = useState<{ producer: Producer, nextStage: OnboardingStage } | null>(null);
+    const [scheduleModalProducer, setScheduleModalProducer] = useState<Producer | null>(null);
     const [teamMembers, setTeamMembers] = useState<Usuario[]>([]);
+    const [meetings, setMeetings] = useState<any[]>([]);
+
+    useEffect(() => {
+        const unsub = db.collection('meetings')
+            .where('status', '==', 'scheduled')
+            .onSnapshot(snap => {
+                setMeetings(snap.docs.map(d => ({id: d.id, ...d.data()})));
+            });
+        return () => unsub();
+    }, []);
 
     // Carrega usuários para o dropdown
     useEffect(() => {
@@ -398,6 +410,10 @@ export const OnboardingBoard: React.FC<Props> = ({ producers = [], onUpdateStatu
             }
 
             setGateModalData(null);
+
+            if (nextStage === 'SETUP_ACESSO') {
+                setScheduleModalProducer(producer);
+            }
         } catch (error) {
             console.error(error);
             addToast({ type: 'error', message: 'Erro ao atualizar etapa.' });
@@ -413,6 +429,13 @@ export const OnboardingBoard: React.FC<Props> = ({ producers = [], onUpdateStatu
                     teamMembers={teamMembers}
                     onClose={() => setGateModalData(null)} 
                     onConfirm={confirmStageChange} 
+                />
+            )}
+
+            {scheduleModalProducer && (
+                <ScheduleOnboardingModal 
+                    producer={scheduleModalProducer} 
+                    onClose={() => setScheduleModalProducer(null)} 
                 />
             )}
 
@@ -463,6 +486,7 @@ export const OnboardingBoard: React.FC<Props> = ({ producers = [], onUpdateStatu
                                         const assignedUser = teamMembers.find(u => u.id === item.responsibleInternalId);
                                         const hasComplexMigration = item.tags?.includes('Migração Complexa');
                                         const hasSimpleSetup = item.tags?.includes('Setup Simples');
+                                        const itemMeeting = meetings.find(m => m.producerId === item.id);
 
                                         return (
                                             <div
@@ -499,6 +523,17 @@ export const OnboardingBoard: React.FC<Props> = ({ producers = [], onUpdateStatu
                                                         </span>
                                                     )}
                                                 </div>
+
+                                                {itemMeeting && (
+                                                    <div className="mb-3 mx-2 bg-blue-50/80 border border-blue-200/60 rounded-lg p-2 flex items-center gap-2 group-hover:bg-blue-100 transition-colors">
+                                                        <div className="p-1 bg-blue-600 text-white rounded shadow-sm">
+                                                            <Calendar size={10} />
+                                                        </div>
+                                                        <span className="text-[10px] font-black tracking-wide text-blue-800">
+                                                            Call: {new Date(itemMeeting.startTime.seconds * 1000).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                                                        </span>
+                                                    </div>
+                                                )}
 
                                                 <div className="border-t border-gray-50 pt-2.5 flex justify-between items-center pl-2">
                                                     <div className="flex items-center gap-2">

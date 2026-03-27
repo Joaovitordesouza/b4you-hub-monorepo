@@ -145,12 +145,20 @@ deploy_functions() {
 
     cd apps/functions
     log "Gerando arquivo de ambiente de produção (.env.production)..."
+    # Carregar as variáveis do Google do ambiente ou do arquivo atual se existirem
+    if [ -f ".env.production" ]; then
+        source .env.production
+    fi
+    
     cat <<EOF > .env.production
 WORKER_URL=$WORKER_URL
 EVOLUTION_API_URL=$EVOLUTION_API_URL
 EVOLUTION_APIKEY=$EVOLUTION_APIKEY
 EVOLUTION_GLOBAL_KEY=$EVOLUTION_GLOBAL_KEY
 INTERNAL_API_KEY=$INTERNAL_API_KEY
+GOOGLE_CLIENT_ID=$GOOGLE_CLIENT_ID
+GOOGLE_CLIENT_SECRET=$GOOGLE_CLIENT_SECRET
+GOOGLE_REDIRECT_URI=$GOOGLE_REDIRECT_URI
 EOF
 
     log "Compilando TypeScript das Functions..."
@@ -202,8 +210,13 @@ deploy_frontend() {
 VITE_API_URL=$EVOLUTION_API_URL
 EOF
     
-    log "Construindo imagem otimizada via Cloud Build..."
-    gcloud builds submit --tag gcr.io/$PROJECT_ID/$FRONTEND_SERVICE . || error "Falha no Cloud Build do Frontend."
+    cd ../..
+
+    log "Construindo imagem otimizada via Cloud Build (Contexto Monorepo)..."
+    # O gcloud builds espera que o arquivo se chame 'Dockerfile' na raiz do contexto
+    cp apps/frontend/Dockerfile ./Dockerfile
+    gcloud builds submit --tag gcr.io/$PROJECT_ID/$FRONTEND_SERVICE . || { rm -f ./Dockerfile; error "Falha no Cloud Build do Frontend."; }
+    rm -f ./Dockerfile
 
     log "Implantando Service no Cloud Run..."
     gcloud run deploy "$FRONTEND_SERVICE" \
@@ -218,7 +231,6 @@ EOF
 
     FRONTEND_URL=$(gcloud run services describe "$FRONTEND_SERVICE" --region "$REGION" --project "$PROJECT_ID" --format='value(status.url)')
     
-    cd ../..
     success "Frontend Web implantado em: $FRONTEND_URL"
 }
 

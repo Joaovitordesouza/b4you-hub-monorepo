@@ -206,6 +206,9 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
               </div>
           )}
 
+          <SidebarSection title="Produtividade" collapsed={isCollapsed} />
+          <SidebarItem collapsed={isCollapsed} icon={Calendar} label="Agenda Completa" onClick={() => window.location.hash = '#/calendar'} active={window.location.hash.includes('calendar')} badge="BETA" />
+
           <SidebarSection title="Gestão & Sucesso" collapsed={isCollapsed} />
           <SidebarItem collapsed={isCollapsed} icon={Map} label="Onboarding" onClick={() => window.location.hash = '#/onboarding'} active={window.location.hash.includes('onboarding')} badge="Novo" />
           <SidebarItem collapsed={isCollapsed} icon={Rocket} label="Lançamentos" onClick={() => window.location.hash = '#/launch-control'} active={window.location.hash.includes('launch-control')} badge="Pico" />

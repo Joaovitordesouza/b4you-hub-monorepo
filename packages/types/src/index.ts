@@ -540,3 +540,43 @@ export interface Launch {
   createdAt: string;
   updatedAt: string;
 }
+
+export interface GoogleCalendarIntegration {
+  access_token: string;
+  refresh_token: string;
+  expiry_date: number;
+  scopes: string[];
+  updatedAt: any;
+}
+
+export interface WorkingHours {
+  start: string; // "HH:mm"
+  end: string;   // "HH:mm"
+  enabled: boolean;
+  breakStart?: string; // "HH:mm" (e.g., lunch start)
+  breakEnd?: string;   // "HH:mm" (e.g., lunch end)
+}
+
+export interface CalendarSettings {
+  working_hours: Record<string, WorkingHours>; // monday, tuesday, etc.
+  buffer_minutes: number;
+  slot_duration: number;
+  timezone: string;
+}
+
+export type MeetingStatus = 'scheduled' | 'completed' | 'cancelled';
+
+export interface Meeting {
+  id: string;
+  producerId: string;
+  csId: string;
+  startTime: any; // Timestamp
+  endTime: any;   // Timestamp
+  googleEventId?: string;
+  meetLink?: string;
+  status: MeetingStatus;
+  title: string;
+  description?: string;
+  createdAt: any;
+  updatedAt: any;
+}

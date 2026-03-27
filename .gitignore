@@ -27,6 +27,12 @@ tmp/
 *.zip
 *.gz
 
+# Local / Debug Files
+.nvm/
+google-cloud-sdk/
+*.pdf
+*:Zone.Identifier
+
 # Firebase
 firebase-debug.log
 firebase-debug.*.log

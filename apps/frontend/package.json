@@ -10,17 +10,19 @@
     "lint": "tsc --noEmit"
   },
   "dependencies": {
-    "@b4you/types": "*",
     "@b4you/firebase": "*",
+    "@b4you/types": "*",
     "@formkit/auto-animate": "^0.8.4",
     "@google/genai": "latest",
     "@types/react-mentions": "^4.4.1",
+    "date-fns": "^4.1.0",
     "firebase": "^12.7.0",
     "lucide-react": "^0.556.0",
     "motion": "^12.35.2",
     "react": "^19.2.1",
     "react-dom": "^19.2.3",
     "react-mentions": "^4.4.10",
+    "react-router-dom": "^7.13.2",
     "recharts": "^3.5.1"
   },
   "devDependencies": {

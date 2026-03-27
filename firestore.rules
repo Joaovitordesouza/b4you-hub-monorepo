@@ -51,6 +51,16 @@ service cloud.firestore {
         allow create: if isSignedIn();
         allow update, delete: if isOwner(userId);
       }
+
+      match /calendar_settings/{docId} {
+        allow read: if isSignedIn();
+        allow write: if isOwner(userId) || isAdmin();
+      }
+
+      match /integrations/{docId} {
+        allow read: if isOwner(userId) || isAdmin();
+        allow write: if isOwner(userId) || isAdmin();
+      }
     }
 
     // 2. Work OS: Workspaces de Boards (workspaces_boards)
@@ -99,7 +109,8 @@ service cloud.firestore {
     match /leads/{leadId} {
       allow read: if isSignedIn();
       allow create: if isSignedIn() && isCreatingAsOwner();
-      allow update, delete: if isResourceOwner() || isAdmin();
+      allow update: if isSignedIn();
+      allow delete: if isResourceOwner() || isAdmin();
 
       match /timeline/{eventId} {
         allow read, write: if isSignedIn();
@@ -136,21 +147,24 @@ service cloud.firestore {
     // 8. Tasks (Tarefas Avulsas)
     match /tasks/{taskId} {
       allow read, create, update, delete: if isSignedIn();
+      match /updates/{updateId} {
+        allow read, write: if isSignedIn();
+      }
     }
 
     // 9. Carteira de Produtores
     match /producers/{producerId} {
       allow read: if isSignedIn();
-      // Escrita bloqueada para client (apenas via Webhook/Cloud Function)
-      allow write: if false;
+      // Escrita liberada para permitir movimentações na Pipeline de Onboarding
+      allow write: if isSignedIn();
 
       match /timeline/{eventId} {
         allow read: if isSignedIn();
-        allow write: if false;
+        allow write: if isSignedIn();
       }
       match /files/{fileId} {
         allow read: if isSignedIn();
-        allow write: if false;
+        allow write: if isSignedIn();
       }
     }
 
@@ -180,6 +194,11 @@ service cloud.firestore {
     match /audit_logs/{logId} {
       allow create: if isSignedIn();
       allow read: if isAdmin();
+    }
+
+    // 12. Agendamentos (Meetings)
+    match /meetings/{meetingId} {
+      allow read, write: if isSignedIn();
     }
   }
 }

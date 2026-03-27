@@ -437,6 +437,29 @@ export const SmartCommandCenter: React.FC<Props> = ({ producer, onClose, onUpdat
 
     const fileInputRef = useRef<HTMLInputElement>(null);
     const trackingMenuRef = useRef<HTMLDivElement>(null);
+
+    const searchMembers = (search: string, callback: (data: any[]) => void) => {
+        if (!teamMembers || teamMembers.length === 0) {
+            callback([{ id: 'empty', display: 'Nenhum membro encontrado' }]);
+            return;
+        }
+        
+        const normalizedSearch = search.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+        
+        const filtered = teamMembers
+            .filter(u => u && u.nome)
+            .filter(u => {
+                const normalizedName = String(u.nome).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+                return normalizedName.includes(normalizedSearch);
+            })
+            .map(u => ({
+                id: String(u.id || 'unknown'),
+                display: String(u.nome || 'Usuário')
+            }));
+            
+        callback(filtered);
+    };
+
     const [isTrackingOpen, setIsTrackingOpen] = useState(false);
 
     const currentStatus = producer.tracking_status || 'PRECISA_CONTATO';
@@ -1281,7 +1304,7 @@ export const SmartCommandCenter: React.FC<Props> = ({ producer, onClose, onUpdat
                                     >
                                         <Mention
                                             trigger="@"
-                                            data={teamMembers && teamMembers.length > 0 ? teamMembers.filter(u => u).map(u => ({ id: String(u.id || 'unknown'), display: String(u.nome || 'Usuário') })) : [{ id: 'empty', display: 'Nenhum membro encontrado' }]}
+                                            data={searchMembers}
                                             displayTransform={(id, display) => `@${display || id || 'Usuário'}`}
                                             markup="@[__display__](__id__)"
                                             className="bg-indigo-100 text-indigo-700 font-bold px-0.5 rounded"
@@ -1428,6 +1451,7 @@ export const SmartCommandCenter: React.FC<Props> = ({ producer, onClose, onUpdat
                                     <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 pt-2">
                                         <button 
                                             onClick={() => {
+                                                onClose();
                                                 onUpdateStatus('EM_ANDAMENTO', 'Suporte técnico concluído');
                                             }}
                                             className="px-5 py-3 bg-white border border-slate-200 text-slate-500 rounded-xl font-black text-[9px] uppercase tracking-widest hover:bg-slate-50 hover:text-slate-700 transition-all flex items-center justify-center gap-2.5 active:scale-95 shadow-sm"
@@ -2136,7 +2160,7 @@ export const SmartCommandCenter: React.FC<Props> = ({ producer, onClose, onUpdat
                                 <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-2">Ações Disponíveis</label>
                                 
                                 <button 
-                                    onClick={() => window.location.hash = `#/inbox?chatId=${producer.whatsapp_contato?.replace(/\D/g,'')}@s.whatsapp.net`}
+                                    onClick={() => { onClose(); window.location.hash = `#/inbox?chatId=${producer.whatsapp_contato?.replace(/\D/g,'')}@s.whatsapp.net` }}
                                     className="p-4 bg-gradient-to-r from-emerald-50 to-emerald-50/30 border border-emerald-100 hover:border-emerald-300 rounded-2xl transition-all text-left group shadow-sm hover:shadow-md relative overflow-hidden mb-2"
                                 >
                                     <div className="absolute inset-0 bg-emerald-400/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
@@ -2337,7 +2361,7 @@ export const SmartCommandCenter: React.FC<Props> = ({ producer, onClose, onUpdat
 
                         {/* Botões de Ação Rápida */}
                         <div className="flex gap-2 w-full justify-center my-8 bg-gray-50 p-2 rounded-2xl border border-gray-100">
-                            <button onClick={() => window.location.hash = `#/inbox?chatId=${producer.whatsapp_contato?.replace(/\D/g,'')}@s.whatsapp.net`} className="flex-1 py-3 rounded-xl bg-white shadow-sm text-gray-600 hover:text-green-600 hover:shadow-md transition-all flex items-center justify-center gap-2 border border-gray-100 group">
+                            <button onClick={() => { onClose(); window.location.hash = `#/inbox?chatId=${producer.whatsapp_contato?.replace(/\D/g,'')}@s.whatsapp.net` }} className="flex-1 py-3 rounded-xl bg-white shadow-sm text-gray-600 hover:text-green-600 hover:shadow-md transition-all flex items-center justify-center gap-2 border border-gray-100 group">
                                 <MessageSquare size={16} className="group-hover:scale-110 transition-transform" />
                             </button>
                             <div className="w-px bg-gray-200 my-1"></div>
@@ -2612,7 +2636,7 @@ export const SmartCommandCenter: React.FC<Props> = ({ producer, onClose, onUpdat
                                                     >
                                                         <Mention
                                                             trigger="@"
-                                                            data={teamMembers && teamMembers.length > 0 ? teamMembers.filter(u => u).map(u => ({ id: String(u.id || 'unknown'), display: String(u.nome || 'Usuário') })) : [{ id: 'empty', display: 'Nenhum membro encontrado' }]}
+                                                            data={searchMembers}
                                                             displayTransform={(id, display) => `@${display || id || 'Usuário'}`}
                                                             markup="@[__display__](__id__)"
                                                             className="bg-brand-50 text-brand-700 font-bold px-0.5 rounded"
@@ -2746,9 +2770,15 @@ export const SmartCommandCenter: React.FC<Props> = ({ producer, onClose, onUpdat
                                             Não há tarefas pendentes para este cliente. Que tal agendar o próximo follow-up?
                                         </p>
                                         <button 
-                                            onClick={() => {
-                                                const input = document.querySelector('input[placeholder="Adicionar nova tarefa..."]') as HTMLInputElement;
-                                                input?.focus();
+                                            onClick={(e) => {
+                                                setNewTaskTitle('Follow-up');
+                                                const tomorrow = new Date();
+                                                tomorrow.setDate(tomorrow.getDate() + 1);
+                                                setNewTaskDate(tomorrow.toISOString());
+                                                setTimeout(() => {
+                                                    const input = document.querySelector('input[placeholder="Adicionar nova tarefa..."]') as HTMLInputElement;
+                                                    input?.focus();
+                                                }, 50);
                                             }}
                                             className="mt-8 px-6 py-3 bg-gray-900 text-white rounded-xl text-xs font-bold hover:bg-black transition-all shadow-lg hover:shadow-xl hover:-translate-y-0.5 active:scale-95 flex items-center gap-2"
                                         >

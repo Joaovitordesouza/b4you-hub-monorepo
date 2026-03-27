@@ -1,6 +1,3 @@
-
-
-
 import React, { useState, useEffect } from 'react';
 import { Layout } from './components/Layout';
 import { Dashboard } from './pages/Dashboard';
@@ -23,12 +20,16 @@ import { HelpScreen } from './pages/HelpScreen';
 import { AdminPanel } from './pages/AdminPanel';
 import { MyWork } from './pages/MyWork'; 
 import { SimpleTaskManager } from './pages/SimpleTaskManager'; // NEW PAGE
+import { MyAgenda } from './pages/MyAgenda';
+import { CalendarDashboard } from './pages/CalendarDashboard';
+import { PublicScheduler } from './pages/PublicScheduler';
 import { AuthProvider, useAuth } from './AuthContext';
 import { EvolutionProvider } from './contexts/EvolutionContext'; 
 import { ToastProvider } from './contexts/ToastContext'; 
 import { Lead, Campanha, OnboardingStage, Producer, WorkTask } from './types';
 import { db } from './firebase';
 import { Loader2 } from 'lucide-react';
+import { HashRouter } from 'react-router-dom';
 
 const AppContent: React.FC = () => {
   const { currentUser, loading: authLoading } = useAuth();
@@ -123,12 +124,10 @@ const AppContent: React.FC = () => {
 
   const handleUpdateOnboardingStatus = async (itemId: string, newStatus: OnboardingStage) => {
     try {
-      // Tenta atualizar como Producer primeiro (Fluxo Novo)
       const producer = producers.find(p => p.id === itemId);
       if (producer) {
           await db.collection('producers').doc(itemId).update({ onboarding_stage: newStatus });
       } else {
-          // Fallback para Lead (Fluxo Antigo)
           await db.collection("leads").doc(itemId).update({ onboardingStatus: newStatus });
       }
     } catch (err) {
@@ -150,13 +149,10 @@ const AppContent: React.FC = () => {
 
   const handleDeleteCampaign = async (id: string) => {
     if (!confirm('Excluir campanha e todos os seus leads permanentemente?')) return;
-    
     try {
       const batch = db.batch();
       const relatedLeads = leads.filter(l => l.campanha_id === id);
-      relatedLeads.forEach(l => {
-        batch.delete(db.collection("leads").doc(l.id));
-      });
+      relatedLeads.forEach(l => batch.delete(db.collection("leads").doc(l.id)));
       batch.delete(db.collection("campaigns").doc(id));
       await batch.commit();
       if (window.location.hash.includes(id)) window.location.hash = '#/campanhas';
@@ -175,34 +171,28 @@ const AppContent: React.FC = () => {
 
     if (route === '#/' || route === '') return <Dashboard leads={leads} campanhas={campanhas} producers={producers} tasks={tasks} />;
     if (route.startsWith('#/my-work')) return <MyWork leads={leads} />;
-    if (route.startsWith('#/tasks')) return <SimpleTaskManager />; // New Route
+    if (route.startsWith('#/tasks')) return <SimpleTaskManager />;
     if (route.startsWith('#/kanban')) return <KanbanBoard leads={leads} onUpdateStatus={handleUpdateLeadStatus} />;
-    
     if (route.startsWith('#/onboarding')) return <OnboardingBoard producers={producers} onUpdateStatus={handleUpdateOnboardingStatus} />;
-    
-    // Alterado: CSPipeline agora recebe Producers, não Leads e Campanhas (foco na gestão)
     if (route.startsWith('#/cs-pipeline')) return <CSPipeline producers={producers} />;
-    
-    // Novo: Health Kanban
     if (route.startsWith('#/health-kanban')) return <HealthBoard producers={producers} />;
-
-    // Novo: Central de Lançamento
     if (route.startsWith('#/launch-control')) return <LaunchPipeline producers={producers} />;
-
     if (route.startsWith('#/kiwify-download')) return <KiwifyDownloader />;
     if (route.startsWith('#/kiwify-gallery')) return <KiwifyGallery />;
     if (route.startsWith('#/hunter')) return <HunterAgent />;
-    
     if (route.startsWith('#/creators')) return <CreatorDashboard leads={leads} producers={producers} />;
-    
     if (route.startsWith('#/connect')) return <ConnectHub leads={leads} />;
     if (route.startsWith('#/inbox')) return <Inbox />;
     if (route.startsWith('#/help')) return <HelpScreen />;
     
     if (route.startsWith('#/admin')) {
         if (currentUser.role === 'admin') return <AdminPanel />;
-        return <div className="p-8 text-center text-red-500 font-bold">Acesso Negado. Área restrita a Administradores.</div>;
+        return <div className="p-8 text-center text-red-500 font-bold">Acesso Negado.</div>;
     }
+
+    if (route.startsWith('#/calendar')) return <CalendarDashboard />;
+    if (route.startsWith('#/agenda')) return <MyAgenda />;
+    if (route.startsWith('#/schedule/')) return <PublicScheduler />;
 
     if (route.startsWith('#/campanhas/')) {
        const campanhaId = route.replace('#/campanhas/', '');
@@ -227,6 +217,18 @@ const AppContent: React.FC = () => {
     return <Dashboard leads={leads} campanhas={campanhas} producers={producers} tasks={tasks} />;
   };
 
+  const isPublicRoute = route.startsWith('#/schedule/');
+
+  if (isPublicRoute) {
+    return (
+        <HashRouter>
+            <div className="bg-[#F9FAFB] min-h-screen">
+                {renderContent()}
+            </div>
+        </HashRouter>
+    );
+  }
+
   return (
     <Layout>
       {renderContent()}
@@ -238,7 +240,9 @@ const App: React.FC = () => (
   <AuthProvider>
     <EvolutionProvider>
         <ToastProvider>
-            <AppContent />
+            <HashRouter>
+                <AppContent />
+            </HashRouter>
         </ToastProvider>
     </EvolutionProvider>
   </AuthProvider>

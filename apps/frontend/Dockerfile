@@ -2,24 +2,32 @@
 FROM node:20-alpine as build
 WORKDIR /app
 
-# Instalar dependências
+# Copiar configurações da raiz
 COPY package*.json ./
+COPY turbo.json ./
+
+# Copiar dependências locais (pacotes compartilhados)
+COPY packages/ ./packages/
+
+# Copiar apenas o frontend para não enviar código desnecessário
+COPY apps/frontend/ ./apps/frontend/
+
+# Instalar dependências da raiz inteira para compor workspace corretamente
 RUN npm install
 
-# Copiar resto do código
-COPY . .
-
-# Fazer o build passando todas as variáveis de ambiente necessárias
+# Buildar o Frontend (Contexto vai pra pasta frontend)
+WORKDIR /app/apps/frontend
 RUN npm run build
 
 # Estágio 2: Servir os arquivos estáticos com Nginx
 FROM nginx:alpine
-COPY --from=build /app/dist /usr/share/nginx/html
+# Copiar do local correto de build gerado dentro do workspace
+COPY --from=build /app/apps/frontend/dist /usr/share/nginx/html
 
 # Copiar configuração customizada do Nginx para suportar React Router
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+COPY apps/frontend/nginx.conf /etc/nginx/conf.d/default.conf
 
-# O Cloud Run usa a porta 8080 (que vamos configurar no nginx.conf)
+# O Cloud Run usa a porta 8080
 EXPOSE 8080
 
 CMD ["nginx", "-g", "daemon off;"]

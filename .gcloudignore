@@ -14,3 +14,14 @@
 .gitignore
 
 node_modules
+
+# Otimizações de Deploy: Ignorando pastas pesadas locais
+google-cloud-sdk/
+.gemini/
+.turbo/
+**/dist/
+**/build/
+**/.next/
+**/.firebase/
+coverage/
+*.log
